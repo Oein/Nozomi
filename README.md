@@ -64,7 +64,7 @@ bun run postrun
 
 ### Alpine (OpenRC)
 
-Registers the app as an OpenRC service that runs `postrun` before starting:
+Registers the app as an OpenRC service:
 
 ```bash
 sudo sh scripts/register-alpine-openrc.sh /opt/link-shorten linkshorten
