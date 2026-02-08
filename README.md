@@ -71,4 +71,23 @@ sudo sh scripts/register-alpine-openrc.sh /opt/link-shorten linkshorten
 sudo rc-service link-shorten start
 ```
 
+If the service is stopped and logs show `sh: bun: Permission denied`, Bun is typically installed only for `root` (e.g. under `/root/.bun`) and is not executable by the service user.
+
+Quick checks (run on the Alpine server):
+
+```bash
+sudo -u linkshorten -s /bin/sh -c 'command -v bun && bun --version'
+sudo cat /etc/init.d/link-shorten | sed -n 's/^command=//p'
+```
+
+Fix options:
+
+- Install Bun system-wide so `linkshorten` can execute it (e.g. in `/usr/local/bin`).
+- Or pass an explicit Bun path when registering:
+
+```bash
+sudo sh scripts/register-alpine-openrc.sh /opt/link-shorten linkshorten /usr/local/bin/bun
+sudo rc-service link-shorten restart
+```
+
 This project was created using `bun init` in bun v1.2.20. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
