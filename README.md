@@ -71,6 +71,21 @@ sudo sh scripts/register-alpine-openrc.sh /opt/link-shorten linkshorten
 sudo rc-service link-shorten start
 ```
 
+### Debian/Ubuntu (systemd)
+
+Registers the app as a systemd service:
+
+```bash
+sudo sh scripts/register-debian-systemd.sh /opt/link-shorten linkshorten /usr/local/bin/bun
+sudo systemctl start link-shorten
+```
+
+Logs:
+
+```bash
+sudo journalctl -u link-shorten -f
+```
+
 If the service is stopped and logs show `sh: bun: Permission denied`, Bun is typically installed only for `root` (e.g. under `/root/.bun`) and is not executable by the service user.
 
 Quick checks (run on the Alpine server):

@@ -1,0 +1,26 @@
+[Unit]
+Description=link-shorten
+After=network.target
+
+[Service]
+Type=simple
+User=__APP_USER__
+Group=__APP_USER__
+WorkingDirectory=__APP_DIR__
+
+# Load env vars (DATABASE_URL, ADMIN_PASSWORD, PORT, etc.)
+EnvironmentFile=-__APP_DIR__/.env
+
+ExecStart=__BUN__ run index.ts
+Restart=on-failure
+RestartSec=2
+
+# Basic hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=__APP_DIR__
+
+[Install]
+WantedBy=multi-user.target
