@@ -76,6 +76,8 @@ sudo rc-service link-shorten start
 Registers the app as a systemd service:
 
 ```bash
+sudo sh scripts/install-bun-debian.sh
+sudo sh scripts/create-service-user.sh linkshorten
 sudo sh scripts/register-debian-systemd.sh /opt/link-shorten linkshorten /usr/local/bin/bun
 sudo systemctl start link-shorten
 ```

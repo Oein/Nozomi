@@ -9,7 +9,9 @@
     "prisma:generate": "bunx prisma generate",
     "prisma:migrate:deploy": "bunx prisma migrate deploy",
     "register:alpine": "sh scripts/register-alpine-openrc.sh",
-    "register:debian": "sh scripts/register-debian-systemd.sh"
+    "register:debian": "sh scripts/register-debian-systemd.sh",
+    "install:bun:debian": "sh scripts/install-bun-debian.sh",
+    "create:service-user": "sh scripts/create-service-user.sh"
   },
   "devDependencies": {
     "@types/bun": "latest",
