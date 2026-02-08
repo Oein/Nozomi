@@ -1,0 +1,30 @@
+#!/sbin/openrc-run
+
+description="link-shorten"
+
+name="link-shorten"
+command="__BUN__"
+command_args="run index.ts"
+directory="__APP_DIR__"
+command_user="__APP_USER__:__APP_USER__"
+
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="/var/log/${RC_SVCNAME}.log"
+error_log="/var/log/${RC_SVCNAME}.err.log"
+
+supervisor="supervise-daemon"
+
+depend() {
+  need net
+}
+
+start_pre() {
+  checkpath --directory --mode 0755 /run
+  checkpath --file --mode 0644 "$output_log" "$error_log"
+
+  cd "$directory" || return 1
+
+  # Run Prisma setup before starting the server.
+  # This uses .env in the app directory (the app also loads dotenv).
+  "$command" run postrun || return 1
+}

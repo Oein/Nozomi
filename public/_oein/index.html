@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin panel</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Link shorten admin</h1>
+      <div id="msg" class="muted"></div>
+
+      <div class="grid">
+        <section class="card">
+          <h2>Create (custom id)</h2>
+          <label for="customId">ID</label>
+          <input id="customId" autocomplete="off" placeholder="example" />
+          <label for="customTarget">Target URL</label>
+          <input
+            id="customTarget"
+            autocomplete="off"
+            placeholder="https://..."
+          />
+          <button id="createCustomBtn" type="button">Create</button>
+        </section>
+
+        <section class="card">
+          <h2>Create (random id)</h2>
+          <label for="randomTarget">Target URL</label>
+          <input
+            id="randomTarget"
+            autocomplete="off"
+            placeholder="https://..."
+          />
+          <button id="createRandomBtn" type="button">Create random</button>
+        </section>
+
+        <section class="card span-2">
+          <h2>Links</h2>
+          <button id="refreshBtn" type="button">Refresh</button>
+          <div style="height: 10px"></div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width: 180px">ID</th>
+                <th>Target</th>
+                <th style="width: 260px">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="linksBody"></tbody>
+          </table>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const msgEl = document.getElementById("msg");
+      const linksBody = document.getElementById("linksBody");
+
+      function setMsg(text) {
+        msgEl.textContent = text || "";
+      }
+
+      async function api(path, options = {}) {
+        const res = await fetch(path, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {}),
+          },
+          ...options,
+        });
+
+        if (res.status === 204) return null;
+
+        const isJson = (res.headers.get("content-type") || "").includes(
+          "application/json",
+        );
+        const body = isJson ? await res.json() : await res.text();
+        if (!res.ok) {
+          const errMsg = isJson ? body.error || JSON.stringify(body) : body;
+          throw new Error(errMsg || `Request failed (${res.status})`);
+        }
+        return body;
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function renderLinks(links) {
+        linksBody.innerHTML = "";
+        for (const link of links) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td><code>${escapeHtml(link.id)}</code></td>
+            <td><a href="/${encodeURIComponent(link.id)}" target="_blank" rel="noreferrer">/${escapeHtml(
+              link.id,
+            )}</a><div>${escapeHtml(link.targetUrl)}</div></td>
+            <td class="row-actions"></td>
+          `;
+
+          const actionsTd = tr.querySelector(".row-actions");
+
+          const editIdBtn = document.createElement("button");
+          editIdBtn.type = "button";
+          editIdBtn.textContent = "Edit id";
+          editIdBtn.onclick = async () => {
+            const newId = prompt("New id", link.id);
+            if (!newId || newId === link.id) return;
+            try {
+              setMsg("Updating id...");
+              await api(`/api/_oein/links/${encodeURIComponent(link.id)}`, {
+                method: "PATCH",
+                body: JSON.stringify({ newId }),
+              });
+              setMsg("Updated.");
+              await refresh();
+            } catch (e) {
+              setMsg(e.message);
+            }
+          };
+
+          const editTargetBtn = document.createElement("button");
+          editTargetBtn.type = "button";
+          editTargetBtn.textContent = "Edit target";
+          editTargetBtn.onclick = async () => {
+            const newTarget = prompt("New target URL", link.targetUrl);
+            if (!newTarget || newTarget === link.targetUrl) return;
+            try {
+              setMsg("Updating target...");
+              await api(`/api/_oein/links/${encodeURIComponent(link.id)}`, {
+                method: "PATCH",
+                body: JSON.stringify({ targetUrl: newTarget }),
+              });
+              setMsg("Updated.");
+              await refresh();
+            } catch (e) {
+              setMsg(e.message);
+            }
+          };
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.type = "button";
+          deleteBtn.textContent = "Delete";
+          deleteBtn.onclick = async () => {
+            const ok = confirm(`Delete /${link.id}?`);
+            if (!ok) return;
+            try {
+              setMsg("Deleting...");
+              await api(`/api/_oein/links/${encodeURIComponent(link.id)}`, {
+                method: "DELETE",
+              });
+              setMsg("Deleted.");
+              await refresh();
+            } catch (e) {
+              setMsg(e.message);
+            }
+          };
+
+          actionsTd.appendChild(editIdBtn);
+          actionsTd.appendChild(editTargetBtn);
+          actionsTd.appendChild(deleteBtn);
+          linksBody.appendChild(tr);
+        }
+      }
+
+      async function refresh() {
+        const data = await api("/api/_oein/links");
+        renderLinks(data.links || []);
+      }
+
+      document.getElementById("refreshBtn").onclick = async () => {
+        try {
+          setMsg("Refreshing...");
+          await refresh();
+          setMsg("");
+        } catch (e) {
+          setMsg(e.message);
+        }
+      };
+
+      document.getElementById("createCustomBtn").onclick = async () => {
+        const id = document.getElementById("customId").value.trim();
+        const targetUrl = document.getElementById("customTarget").value.trim();
+        try {
+          setMsg("Creating...");
+          const data = await api("/api/_oein/links", {
+            method: "POST",
+            body: JSON.stringify({ mode: "custom", id, targetUrl }),
+          });
+          setMsg(`Created /${data.link.id}`);
+          document.getElementById("customId").value = "";
+          document.getElementById("customTarget").value = "";
+          await refresh();
+        } catch (e) {
+          setMsg(e.message);
+        }
+      };
+
+      document.getElementById("createRandomBtn").onclick = async () => {
+        const targetUrl = document.getElementById("randomTarget").value.trim();
+        try {
+          setMsg("Creating random...");
+          const data = await api("/api/_oein/links", {
+            method: "POST",
+            body: JSON.stringify({ mode: "random", targetUrl }),
+          });
+          setMsg(`Created /${data.link.id}`);
+          document.getElementById("randomTarget").value = "";
+          await refresh();
+        } catch (e) {
+          setMsg(e.message);
+        }
+      };
+
+      (async () => {
+        try {
+          await refresh();
+        } catch (e) {
+          setMsg(e.message);
+        }
+      })();
+    </script>
+  </body>
+</html>
