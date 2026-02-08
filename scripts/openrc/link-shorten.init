@@ -20,7 +20,7 @@ depend() {
 
 start_pre() {
   checkpath --directory --mode 0755 /run
-  checkpath --file --mode 0644 "$output_log" "$error_log"
+  checkpath --file --owner "$command_user" --mode 0644 "$output_log" "$error_log"
 
   cd "$directory" || return 1
 }
