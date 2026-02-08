@@ -8,7 +8,8 @@
     "postrun": "sh scripts/postrun.sh",
     "prisma:generate": "bunx prisma generate",
     "prisma:migrate:deploy": "bunx prisma migrate deploy",
-    "register:alpine": "sh scripts/register-alpine-openrc.sh"
+    "register:alpine": "sh scripts/register-alpine-openrc.sh",
+    "register:debian": "sh scripts/register-debian-systemd.sh"
   },
   "devDependencies": {
     "@types/bun": "latest",
