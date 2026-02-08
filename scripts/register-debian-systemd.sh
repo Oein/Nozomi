@@ -27,15 +27,52 @@ if [ ! -d "$APP_DIR" ]; then
   exit 1
 fi
 
-if [ -z "$BUN_BIN" ]; then
-  if command -v bun >/dev/null 2>&1; then
-    BUN_BIN=$(command -v bun)
+resolve_bun_bin() {
+  if [ -n "$BUN_BIN" ]; then
+    echo "$BUN_BIN"
+    return 0
   fi
-fi
+
+  # Prefer stable, system-wide locations.
+  if [ -x /usr/local/bin/bun ]; then
+    echo /usr/local/bin/bun
+    return 0
+  fi
+  if [ -x /opt/bun/bin/bun ]; then
+    echo /opt/bun/bin/bun
+    return 0
+  fi
+
+  # Fallback to PATH.
+  command -v bun 2>/dev/null || true
+}
+
+BUN_BIN="$(resolve_bun_bin)"
 
 if [ -z "$BUN_BIN" ]; then
   echo "[register] bun not found. Install Bun system-wide or pass bun_path as 3rd arg." >&2
   exit 1
+fi
+
+# systemd can't rely on ephemeral /tmp paths. If bun resolves to /tmp, re-install bun system-wide.
+case "$BUN_BIN" in
+  /tmp/*)
+    echo "[register] bun path looks ephemeral: $BUN_BIN" >&2
+    echo "[register] Install Bun system-wide (e.g. scripts/install-bun-debian.sh) and re-run." >&2
+    exit 1
+    ;;
+esac
+
+# If bun is a symlink, ensure it doesn't resolve into /tmp.
+if command -v readlink >/dev/null 2>&1; then
+  BUN_REAL=$(readlink -f "$BUN_BIN" 2>/dev/null || true)
+  case "$BUN_REAL" in
+    /tmp/*)
+      echo "[register] bun resolves into /tmp: $BUN_BIN -> $BUN_REAL" >&2
+      echo "[register] Install Bun system-wide (e.g. scripts/install-bun-debian.sh) and re-run." >&2
+      exit 1
+      ;;
+  esac
 fi
 
 if [ ! -x "$BUN_BIN" ]; then

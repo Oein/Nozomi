@@ -88,6 +88,8 @@ Logs:
 sudo journalctl -u link-shorten -f
 ```
 
+If systemd shows `status=203/EXEC` and mentions a Bun path under `/tmp/...`, re-register using a stable Bun binary path (for example `/usr/local/bin/bun`).
+
 If the service is stopped and logs show `sh: bun: Permission denied`, Bun is typically installed only for `root` (e.g. under `/root/.bun`) and is not executable by the service user.
 
 Quick checks (run on the Alpine server):
