@@ -96,6 +96,14 @@ button:disabled {
   cursor: not-allowed;
 }
 
+select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: inherit;
+}
+
 .muted {
   color: #475569;
   font-size: 12px;
@@ -104,6 +112,18 @@ button:disabled {
 #msg {
   margin: 10px 0 12px;
   white-space: pre-wrap;
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.pager-label {
+  margin: 0 0 0 6px;
 }
 
 .table {

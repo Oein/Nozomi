@@ -39,6 +39,17 @@
         <section class="card span-2">
           <h2>Links</h2>
           <button id="refreshBtn" type="button">Refresh</button>
+          <div class="pager">
+            <button id="prevPageBtn" type="button">Prev</button>
+            <div id="pageInfo" class="muted"></div>
+            <button id="nextPageBtn" type="button">Next</button>
+            <label for="pageSizeSelect" class="pager-label">Page size</label>
+            <select id="pageSizeSelect">
+              <option value="20">20</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
           <div style="height: 10px"></div>
           <table class="table">
             <thead>
@@ -57,6 +68,14 @@
     <script>
       const msgEl = document.getElementById("msg");
       const linksBody = document.getElementById("linksBody");
+      const prevPageBtn = document.getElementById("prevPageBtn");
+      const nextPageBtn = document.getElementById("nextPageBtn");
+      const pageInfoEl = document.getElementById("pageInfo");
+      const pageSizeSelect = document.getElementById("pageSizeSelect");
+
+      let currentPage = 1;
+      let pageSize = Number(pageSizeSelect.value) || 50;
+      let totalPages = 1;
 
       function setMsg(text) {
         msgEl.textContent = text || "";
@@ -170,8 +189,25 @@
         }
       }
 
-      async function refresh() {
-        const data = await api("/api/_oein/links");
+      function updatePager(data) {
+        totalPages = Math.max(1, Number(data.totalPages) || 1);
+        currentPage = Math.min(Math.max(1, Number(data.page) || 1), totalPages);
+        pageInfoEl.textContent = `Page ${currentPage} of ${totalPages} (${data.total || 0} total)`;
+        prevPageBtn.disabled = currentPage <= 1;
+        nextPageBtn.disabled = currentPage >= totalPages;
+      }
+
+      async function refresh(allowRetry = true) {
+        const data = await api(
+          `/api/_oein/links?page=${encodeURIComponent(
+            currentPage,
+          )}&pageSize=${encodeURIComponent(pageSize)}`,
+        );
+        updatePager(data);
+        if (allowRetry && currentPage > totalPages) {
+          currentPage = totalPages;
+          return refresh(false);
+        }
         renderLinks(data.links || []);
       }
 
@@ -197,6 +233,7 @@
           setMsg(`Created /${data.link.id}`);
           document.getElementById("customId").value = "";
           document.getElementById("customTarget").value = "";
+          currentPage = 1;
           await refresh();
         } catch (e) {
           setMsg(e.message);
@@ -213,7 +250,44 @@
           });
           setMsg(`Created /${data.link.id}`);
           document.getElementById("randomTarget").value = "";
+          currentPage = 1;
           await refresh();
+        } catch (e) {
+          setMsg(e.message);
+        }
+      };
+
+      prevPageBtn.onclick = async () => {
+        if (currentPage <= 1) return;
+        currentPage -= 1;
+        try {
+          setMsg("Refreshing...");
+          await refresh();
+          setMsg("");
+        } catch (e) {
+          setMsg(e.message);
+        }
+      };
+
+      nextPageBtn.onclick = async () => {
+        if (currentPage >= totalPages) return;
+        currentPage += 1;
+        try {
+          setMsg("Refreshing...");
+          await refresh();
+          setMsg("");
+        } catch (e) {
+          setMsg(e.message);
+        }
+      };
+
+      pageSizeSelect.onchange = async () => {
+        pageSize = Number(pageSizeSelect.value) || 50;
+        currentPage = 1;
+        try {
+          setMsg("Refreshing...");
+          await refresh();
+          setMsg("");
         } catch (e) {
           setMsg(e.message);
         }

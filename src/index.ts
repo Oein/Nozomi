@@ -139,9 +139,31 @@ export async function startServer() {
 
     app.use("/api/_oein", adminAuth, express.json());
 
-    app.get("/api/_oein/links", async (_req, res) => {
-        const links = await prisma.link.findMany({ orderBy: { id: "asc" } });
-        res.json({ links });
+    app.get("/api/_oein/links", async (req, res) => {
+        const pageRaw = typeof req.query.page === "string" ? req.query.page : undefined;
+        const pageSizeRaw =
+            typeof req.query.pageSize === "string" ? req.query.pageSize : undefined;
+
+        const page = Math.max(1, Number(pageRaw ?? 1) || 1);
+        const pageSize = Math.min(200, Math.max(1, Number(pageSizeRaw ?? 50) || 50));
+
+        const total = await prisma.link.count();
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+        const safePage = Math.min(page, totalPages);
+
+        const links = await prisma.link.findMany({
+            orderBy: { createdAt: "desc" },
+            skip: (safePage - 1) * pageSize,
+            take: pageSize,
+        });
+
+        res.json({
+            links,
+            page: safePage,
+            pageSize,
+            total,
+            totalPages,
+        });
     });
 
     app.post("/api/_oein/links", async (req, res) => {
