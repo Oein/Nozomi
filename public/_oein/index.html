@@ -112,15 +112,32 @@
           .replaceAll("'", "&#039;");
       }
 
+      function safeDecode(value) {
+        try {
+          return decodeURIComponent(value);
+        } catch {
+          return value;
+        }
+      }
+
+      function truncateText(value, maxLength) {
+        if (value.length <= maxLength) return value;
+        return `${value.slice(0, maxLength)}...`;
+      }
+
       function renderLinks(links) {
         linksBody.innerHTML = "";
         for (const link of links) {
+          const decodedTarget = safeDecode(link.targetUrl);
+          const displayTarget = truncateText(decodedTarget, 90);
           const tr = document.createElement("tr");
           tr.innerHTML = `
-            <td><code>${escapeHtml(link.id)}</code></td>
             <td><a href="/${encodeURIComponent(link.id)}" target="_blank" rel="noreferrer">/${escapeHtml(
               link.id,
-            )}</a><div>${escapeHtml(link.targetUrl)}</div></td>
+            )}</a></td>
+            <td><div title="${escapeHtml(decodedTarget)}">${escapeHtml(
+              displayTarget,
+            )}</div></td>
             <td class="row-actions"></td>
           `;
 
