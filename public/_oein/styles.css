@@ -139,6 +139,8 @@ select {
   padding: 10px;
   text-align: left;
   vertical-align: top;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .table th {
@@ -160,6 +162,8 @@ code {
 
 a {
   color: inherit;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 a:hover {
